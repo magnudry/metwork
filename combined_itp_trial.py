@@ -23,7 +23,7 @@ more_files = sorted(glob.glob(path + "/*.dat"))[:10] # include as many as you wa
 first = True
 start = time.time()
 for i in more_files:
-    #one-time opening approach
+    #one-time opening approach, many lines - much treatment required
     '''
     data = pd.read_table(i, skipfooter = 1, header = None, sep='\s+',  
                      engine = 'python')
@@ -62,7 +62,7 @@ for i in more_files:
     #can interchange the two approaches from here - will rewrite variables to match the two codes!
     df = data
     '''
-    #two-time opening approach
+    #two-time opening approach, fewer lines - less dataset treatment
     df = pd.read_table(i,skiprows=2, delim_whitespace=True,skipfooter=1,engine="python")
     
     
@@ -128,10 +128,35 @@ if "dissolved_oxygen" in df.columns:
     buoy["moles_of_oxygen_per_unit_mass_in_sea_water"].attrs["units"] = "umol/kg"
 
 #global attributes
-buoy.attrs["title"] = "Nan"
-buoy.attrs["summary"] = "Nan"
-buoy.attrs["keywords"] = "Nan"
-buoy.attrs["keywords_vocabulary"] = "Nan"
+buoy.attrs["title"] = ("Trajectory of profiles for ITP " + str(meta.head().columns[1])) #change a0 to the meta-indexing
+#summary for normal grd-files, Level 2
+buoy.attrs["summary"] = ("""Trajectory of ITP (Ice-Tethered Profiler) profiles, that use pressure in dbar as vertical coordinate.
+                         All profiles contain measurement times, temperature and salinity, and may include dissolved oxygen,
+                         chromophoric dissolved organic matter (CDOM), turbidity, mass concentration of chlorophyll,
+                         photosynthetically active radiation (PAR) and velocities. Metadata include time of initialization,
+                         coordinates and profile data points (ndepths). 'The Ice-Tethered Profiler data were collected and made 
+                         available by the Ice-Tethered Profiler Program (Toole et al., 2011; Krishfield et al., 2008) 
+                         based at the Woods Hole Oceanographic Institution (https://www2.whoi.edu/site/itp/).'""")
+#summary for final files, averaged
+buoy.attrs["summary"] = ("""Trajectory of ITP (Ice-Tethered Profiler) profiles, that use pressure in dbar as vertical coordinate.
+                         All profiles contain averaged measurements of temperature and salinity, and may include dissolved oxygen,
+                         chromophoric dissolved organic matter (CDOM), turbidity, mass concentration of chlorophyll,
+                         photosynthetically active radiation (PAR) and velocities. Metadata include time of initialization,
+                         coordinates and profile data points (ndepths). 'The Ice-Tethered Profiler data were collected and made 
+                         available by the Ice-Tethered Profiler Program (Toole et al., 2011; Krishfield et al., 2008)
+                         based at the Woods Hole Oceanographic Institution (https://www2.whoi.edu/site/itp/).' """)
+#keywords må skrives om, med hele pathen til ordet
+buoy.attrs["keywords"] = ["EARTH SCIENCE > OCEANS > SALINITY/DENSITY > DENSITY",
+                          "EARTH SCIENCE > OCEANS > OCEAN TEMPERATURE > WATER TEMPERATURE",
+                          "EARTH SCIENCE > OCEANS > SALINITY/DENSITY > SALINITY",
+                          "EARTH SCIENCE > OCEANS > OCEAN CHEMISTRY > OXYGEN",
+                          "EARTH SCIENCE > OCEANS > OCEAN CHEMISTRY > ORGANIC MATTER",
+                          "EARTH SCIENCE > OCEANS > OCEAN OPTICS > TURBIDITY",
+                          "EARTH SCIENCE > OCEANS > OCEAN CHEMISTRY > CHLOROPHYLL",
+                          "EARTH SCIENCE > OCEANS > OCEAN CIRCULATION > ADVECTION"]
+#buoy.attrs["keywords"] = ["Water Pressure", "Water Temperature", "Salinity", "Photosynthetically Active Radiation", "Turbidity", 
+#                         "Oxygen","Chlorophyll", "Organic Matter", "Advection", "Buoy Position"]
+buoy.attrs["keywords_vocabulary"] = "GCMD"
 buoy.attrs["featureType"] = "trajectoryProfile"
 
 buoy.attrs["geospatial_lat_min"] = min(buoy.latitude.values)
@@ -143,15 +168,15 @@ buoy.attrs["time_coverage_start"] = min(buoy.time.values)
 buoy.attrs["time_coverage_end"] = max(buoy.time.values)
 
 buoy.attrs["Conventions"] = "ACDD-1.3"
-buoy.attrs["history"] = "Nan"
-buoy.attrs["date_created"] = "Nan"
-buoy.attrs["creator_type"] = "Nan"
-buoy.attrs["creator_institution"] = "Nan"
-buoy.attrs["creator_name"] = "Nan"
-buoy.attrs["creator_email"] = "Nan"
-buoy.attrs["creator_url"] = "Nan"
+buoy.attrs["history"] = "Nan" #???
+buoy.attrs["date_created"] = str(dt.date.today())
+buoy.attrs["creator_type"] = "institution" #?
+buoy.attrs["creator_institution"] = "Woods Hole Oceanographic Institution (WHOI)"
+buoy.attrs["creator_name"] = "Woods Hole Oceanographic Institution"
+buoy.attrs["creator_email"] = "information@whoi.edu" #?
+buoy.attrs["creator_url"] = "https://www2.whoi.edu/site/itp/data/"
 buoy.attrs["project"] = "Nan"
-buoy.attrs["license"] = "Nan"
+buoy.attrs["license"] = "None"
 
 
 buoy
