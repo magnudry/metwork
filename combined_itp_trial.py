@@ -148,14 +148,14 @@ buoy.attrs["summary"] = ("""Trajectory of ITP (Ice-Tethered Profiler) profiles, 
                          available by the Ice-Tethered Profiler Program (Toole et al., 2011; Krishfield et al., 2008)
                          based at the Woods Hole Oceanographic Institution (https://www2.whoi.edu/site/itp/).' """)
 #keywords må skrives om, med hele pathen til ordet
-buoy.attrs["keywords"] = ["EARTH SCIENCE > OCEANS > SALINITY/DENSITY > DENSITY",
-                          "EARTH SCIENCE > OCEANS > OCEAN TEMPERATURE > WATER TEMPERATURE",
-                          "EARTH SCIENCE > OCEANS > SALINITY/DENSITY > SALINITY",
-                          "EARTH SCIENCE > OCEANS > OCEAN CHEMISTRY > OXYGEN",
-                          "EARTH SCIENCE > OCEANS > OCEAN CHEMISTRY > ORGANIC MATTER",
-                          "EARTH SCIENCE > OCEANS > OCEAN OPTICS > TURBIDITY",
-                          "EARTH SCIENCE > OCEANS > OCEAN CHEMISTRY > CHLOROPHYLL",
-                          "EARTH SCIENCE > OCEANS > OCEAN CIRCULATION > ADVECTION"]
+buoy.attrs["keywords"] = """EARTH SCIENCE > OCEANS > SALINITY/DENSITY > DENSITY,
+                          EARTH SCIENCE > OCEANS > OCEAN TEMPERATURE > WATER TEMPERATURE,
+                          EARTH SCIENCE > OCEANS > SALINITY/DENSITY > SALINITY,
+                          EARTH SCIENCE > OCEANS > OCEAN CHEMISTRY > OXYGEN,
+                          EARTH SCIENCE > OCEANS > OCEAN CHEMISTRY > ORGANIC MATTER,
+                          EARTH SCIENCE > OCEANS > OCEAN OPTICS > TURBIDITY,
+                          EARTH SCIENCE > OCEANS > OCEAN CHEMISTRY > CHLOROPHYLL,
+                          EARTH SCIENCE > OCEANS > OCEAN CIRCULATION > ADVECTION"""
 #buoy.attrs["keywords"] = ["Water Pressure", "Water Temperature", "Salinity", "Photosynthetically Active Radiation", "Turbidity", 
 #                         "Oxygen","Chlorophyll", "Organic Matter", "Advection", "Buoy Position"]
 buoy.attrs["keywords_vocabulary"] = "GCMD"
@@ -175,8 +175,9 @@ buoy.attrs["Conventions"] = "ACDD-1.3"
 #date, time of day, user name, program name and command arguments.
 #our program only runs one time - i.e. the only modification to the data
 #array format allows for appending new modification lists... probs not necessary
-buoy.attrs["history"] = [[str(dt.datetime.now()),getpass.getuser(),
-                         "program name (itp_ascii2cf)",str(sys.argv)]]
+buoy.attrs["history"] = ("{} {} {} {}".format((dt.datetime.now()), getpass.getuser(), program name (itp_ascii2cf), str(sys.argv)))
+#buoy.attrs["history"] = [[str(dt.datetime.now()),getpass.getuser(),
+#                         "program name (itp_ascii2cf)",str(sys.argv)]]
 buoy.attrs["date_created"] = str(dt.date.today())
 buoy.attrs["creator_type"] = "institution" #?
 buoy.attrs["creator_institution"] = "Woods Hole Oceanographic Institution (WHOI)"
