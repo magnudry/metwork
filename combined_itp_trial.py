@@ -12,6 +12,8 @@ import numpy as np
 import datetime as dt
 import glob
 import time
+import getpass
+import sys
 
 #can either open entire file once and extract all necessary data into arrays - elegant, maybe faster
 #or open twice and keep second row as header - easily read, maybe slightly slower
@@ -168,7 +170,13 @@ buoy.attrs["time_coverage_start"] = min(buoy.time.values)
 buoy.attrs["time_coverage_end"] = max(buoy.time.values)
 
 buoy.attrs["Conventions"] = "ACDD-1.3"
-buoy.attrs["history"] = "Nan" #???
+#On history:
+#Provides an audit trail for modifications to the original data.
+#date, time of day, user name, program name and command arguments.
+#our program only runs one time - i.e. the only modification to the data
+#array format allows for appending new modification lists... probs not necessary
+buoy.attrs["history"] = [[str(dt.datetime.now()),getpass.getuser(),
+                         "program name (itp_ascii2cf)",str(sys.argv)]]
 buoy.attrs["date_created"] = str(dt.date.today())
 buoy.attrs["creator_type"] = "institution" #?
 buoy.attrs["creator_institution"] = "Woods Hole Oceanographic Institution (WHOI)"
