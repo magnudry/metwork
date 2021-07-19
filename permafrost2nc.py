@@ -103,7 +103,7 @@ def extractdatajson(frostcfg,station,stmd,output):
     #                                   "&referencetime=",args.startday,"%2F",args.endday,"&elements=",element))
     #metaurl = ("{}{}{}{}{}".format(frostcfg["endpointmeta"],"?ids=",source,"&elements=",element))
     #print(url,"\n",metaurl) #check links
-    mpar = {"sources" : station, "elements" : element,} 
+    mpar = {"ids" : station, "elements" : element,} 
     par = {"sources" : station, "elements" : element, 
            "referencetime" : ("{}{}{}".format(args.startday,"/",args.endday)),}
     mylog.info("Retrieving metadata for station: %s", station)
@@ -112,7 +112,7 @@ def extractdatajson(frostcfg,station,stmd,output):
     except:
         mylog.error("Something went wrong extracting source metadata.")
         raise
-    sourcedata = json.loads(sourcer.text) #sources dict, this is from the metaurl
+    sourcedata = json.loads(sourcer.text) #sources dict
     # Check that the station has data in the period requested.
     # Sometimes this will fail anyway since there is no data due to technical issues and the station is still considered active.
     if "validTo" in sourcedata["data"][0].keys() and datetime.strptime(args.startday,"%Y-%m-%d") > datetime.strptime(sourcedata["data"][0]["validTo"],"%Y-%m-%dT%H:%M:%S.%fZ"):
@@ -127,6 +127,7 @@ def extractdatajson(frostcfg,station,stmd,output):
     except:
         mylog.error("Something went wrong extracting observation data.")
         raise
+    
     # Check if the request worked, print out any errors
     if r.status_code == 412:
         mylog.error("Information returned indicates that no data is available for this time period for station %s", station)
@@ -134,6 +135,7 @@ def extractdatajson(frostcfg,station,stmd,output):
     if r.status_code != 200:
         mylog.error("Returned status code was %s\nmessage:\n%s", r.status_code, r.text)
         raise
+    
     metadata = json.loads(r.text) #observation dict, confusing name (sorry)
     data = metadata.pop('data') #obtain data dict
     
@@ -172,8 +174,8 @@ def extractdatajson(frostcfg,station,stmd,output):
         #dfi = df.iloc[[i]]
     
         #potential dictionary approach?
-    
-        prof["time"] = df.index[i]
+        prof["time"] = (pd.to_datetime(df.index[i], utc=True) - pd.Timestamp("1970-01-01", tz='UTC')) // pd.Timedelta('1s')
+        prof["strtime"] = df.index[i] #for attributes and filename, later
         prof = prof.assign_coords(profile = profilenr)
         prof = prof.expand_dims("profile")    
         #join sets
@@ -183,6 +185,7 @@ def extractdatajson(frostcfg,station,stmd,output):
         else:
             ds = xr.concat([ds,prof], dim = "profile") #similar to append in time consumption??
         profilenr += 1
+    
     #ds.attrs["name"] = "temperature" #what's the purpose of this?
     ds.attrs["standard_name"] = "soil_temperature"
     ds.attrs["units"] = "degree_celsius"
@@ -190,13 +193,18 @@ def extractdatajson(frostcfg,station,stmd,output):
     ds.depth.attrs["long_name"] = "depth below surface in centimeters"
     ds.depth.attrs["units"] = "centimeters"
     #global attributes
+    
     ds.attrs['title'] = ("{} {}".format("Permafrost borehole measurements from station", 
                                         sourcedata['data'][0]['shortName']))
     ds.attrs["summary"] = output["abstract"]
-    ds.attrs["license"] = metadata["license"]
+    ds.attrs["license"] = sourcedata["license"]
     ds.attrs['featureType'] = "timeSeriesProfile"
-    ds.attrs["time_coverage_start"] = ds.time[0].strftime('%Y-%m-%dT%H:%M:%SZ')
-    ds.attrs["time_coverage_end"] = ds.time[-1].strftime('%Y-%m-%dT%H:%M:%SZ')
+    ds.attrs["time_coverage_start"] = ds.time[0]
+    #ds.attrs["time_coverage_start"] = ds.strtime[0].strftime('%Y-%m-%dT%H:%M:%SZ') #already has this format?
+    ds.attrs["time_coverage_end"] = ds.strtime[-1]
+    #print(ds.strtime[-1])
+    #ds.attrs["time_coverage_end"] = ds.strtime[-1].strftime('%Y-%m-%dT%H:%M:%SZ')
+    #print("skrabada")
     ds.attrs["geospatial_lat_min"] = sourcedata["data"][0]["geometry"]["coordinates"][1]
     ds.attrs["geospatial_lat_max"] = sourcedata["data"][0]["geometry"]["coordinates"][1]
     ds.attrs["geospatial_lon_min"] = sourcedata["data"][0]["geometry"]["coordinates"][0]
@@ -219,17 +227,23 @@ def extractdatajson(frostcfg,station,stmd,output):
                                              through Frost and stored as NetCDF-CF"""))
     ds.attrs["source"] = "Soil temperature from permafrost boreholes"
     ds.attrs["wigosId"] = sourcedata["data"][0]["wigosId"]
-    ds.attrs["project"] = stmd["project"]
+    ds.attrs["project"] = stmd["Project"]
+    #print(ds)
     #to netcdf
-    datasetstart4filename = ds.time[0].strftime('%Y%m%d')
-    datasetend4filename = ds.time[-1].strftime('%Y%m%d')
+    datasetstart4filename = "start"
+    #datasetstart4filename = ds.strtime[0].strftime('%Y%m%d')
+    datasetend4filename = "end"
+    #datasetend4filename = ds.strtime[-1].strftime('%Y%m%d')
+    
     outputfile = ("{}{}{}{}{}{}{}{}".format(output["destdir"],"/",stmd["filename"],
                                     "_",datasetstart4filename,"-",datasetend4filename,".nc"))
+    #print("skrabada")
     ds.to_netcdf(outputfile,
                  encoding={'depth': {'dtype':'int32'},
                            'time': {'dtype': 'int32'},
                            'soil_temperature': {'dtype': 'float32'}
                            })
+    print("skrabada")
     return
 """
 args = parse_arguments()
