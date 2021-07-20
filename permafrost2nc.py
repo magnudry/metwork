@@ -5,10 +5,6 @@ Created on Thu Jul  8 12:53:58 2021
 
 @author: magnusdr
 """
-#The following three variables are global and must be specified in command line 
-#starttime = "2021-06-19T12%3A00%3A00.000Z" #strange format 
-#endtime = "2021-06-20T00%3A00%3A00.000Z" #specifiy in command line
-#path = "/home/magnusdr/Documents/metwork/frostcfg.cfg" #use your own path!
 import os
 import sys
 import argparse
@@ -23,7 +19,7 @@ import json
 import yaml
 import logging
 #from logging.handlers import TimedRotatingFileHandler
-from datetime import datetime
+from datetime import datetime 
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -88,21 +84,10 @@ def initialise_logger(outputfile = './log'):
 
     return(mylog)
 
-"""
-Times thus far only given by date, w/o time of day
-startday = "YYYY-MM-DD"
-endday = "YYYY-MM-DD"
-"""
 def extractdatajson(frostcfg,station,stmd,output):
-    clid = frostcfg["client_id"] #ok
-    #source = list(station)[0]
+    clid = frostcfg["client_id"] 
     element = "soil_temperature" #only element in permafrost sets, could generalise
-    
     #Only fetch json-files
-    #url = ("{}{}{}{}{}{}{}{}{}".format(frostcfg["endpointobs"],"?sources=",source,
-    #                                   "&referencetime=",args.startday,"%2F",args.endday,"&elements=",element))
-    #metaurl = ("{}{}{}{}{}".format(frostcfg["endpointmeta"],"?ids=",source,"&elements=",element))
-    #print(url,"\n",metaurl) #check links
     mpar = {"ids" : station, "elements" : element,} 
     par = {"sources" : station, "elements" : element, 
            "referencetime" : ("{}{}{}".format(args.startday,"/",args.endday)),}
@@ -141,6 +126,7 @@ def extractdatajson(frostcfg,station,stmd,output):
     
     df = pd.json_normalize(data, "observations",["sourceId", "referenceTime"]) #dataframe from the json
     #the dataframe needs a bit of work, save the one-off values
+    """
     sourceId = df["sourceId"][0] #specified in request
     elementId = df["elementId"][0] #this as well
     tempunit = df["unit"][0]
@@ -152,6 +138,8 @@ def extractdatajson(frostcfg,station,stmd,output):
     qualityCode = df["qualityCode"][0] #this can actually change over the course of observations
     l_levelType = df["level.levelType"][0]
     l_unit = df["level.unit"][0]
+    """
+    #do we need them for anything though?
     #now drop them
     df.drop(["sourceId","elementId","unit","timeOffset","timeResolution","timeSeriesId",
              "performanceCategory", "exposureCategory","qualityCode","level.levelType",
@@ -169,13 +157,7 @@ def extractdatajson(frostcfg,station,stmd,output):
         dfi = pd.DataFrame({"depth" : si.index, "soil_temperature" : si.values}) #this is what takes time (?)
         dfi = dfi.set_index("depth")
         prof = xr.Dataset.from_dataframe(dfi) #xarray needs to take in a dataframe
-    
-        #dataframe approach
-        #dfi = df.iloc[[i]]
-    
-        #potential dictionary approach?
         prof["time"] = (pd.to_datetime(df.index[i], utc=True) - pd.Timestamp("1970-01-01", tz='UTC')) // pd.Timedelta('1s')
-        prof["strtime"] = df.index[i] #for attributes and filename, later
         prof = prof.assign_coords(profile = profilenr)
         prof = prof.expand_dims("profile")    
         #join sets
@@ -185,26 +167,27 @@ def extractdatajson(frostcfg,station,stmd,output):
         else:
             ds = xr.concat([ds,prof], dim = "profile") #similar to append in time consumption??
         profilenr += 1
-    
+    stt = datetime.fromtimestamp(ds.time[0]) #datetime object of first timestep
+    ent = datetime.fromtimestamp(ds.time[-1]) #datetime object of final timestep
     #ds.attrs["name"] = "temperature" #what's the purpose of this?
+    ds.attrs["name"] = "temperature"
     ds.attrs["standard_name"] = "soil_temperature"
     ds.attrs["units"] = "degree_celsius"
+    ds.depth.attrs["name"] = "depth"
     ds.depth.attrs["standard_name"] = "depth"
     ds.depth.attrs["long_name"] = "depth below surface in centimeters"
     ds.depth.attrs["units"] = "centimeters"
+    ds.depth.attrs["positive"] = "down"
+    ds.time.attrs["standard_name"] = "time"
+    ds.time.attrs["units"] = "seconds since 1970-01-01 00:00:00+0"
     #global attributes
-    
     ds.attrs['title'] = ("{} {}".format("Permafrost borehole measurements from station", 
                                         sourcedata['data'][0]['shortName']))
     ds.attrs["summary"] = output["abstract"]
     ds.attrs["license"] = sourcedata["license"]
     ds.attrs['featureType'] = "timeSeriesProfile"
-    ds.attrs["time_coverage_start"] = ds.time[0]
-    #ds.attrs["time_coverage_start"] = ds.strtime[0].strftime('%Y-%m-%dT%H:%M:%SZ') #already has this format?
-    ds.attrs["time_coverage_end"] = ds.strtime[-1]
-    #print(ds.strtime[-1])
-    #ds.attrs["time_coverage_end"] = ds.strtime[-1].strftime('%Y-%m-%dT%H:%M:%SZ')
-    #print("skrabada")
+    ds.attrs["time_coverage_start"] = stt.strftime("%Y-%m-%d %H:%M:%S") 
+    ds.attrs["time_coverage_end"] = ent.strftime("%Y-%m-%d %H:%M:%S")
     ds.attrs["geospatial_lat_min"] = sourcedata["data"][0]["geometry"]["coordinates"][1]
     ds.attrs["geospatial_lat_max"] = sourcedata["data"][0]["geometry"]["coordinates"][1]
     ds.attrs["geospatial_lon_min"] = sourcedata["data"][0]["geometry"]["coordinates"][0]
@@ -230,29 +213,18 @@ def extractdatajson(frostcfg,station,stmd,output):
     ds.attrs["project"] = stmd["Project"]
     #print(ds)
     #to netcdf
-    datasetstart4filename = "start"
-    #datasetstart4filename = ds.strtime[0].strftime('%Y%m%d')
-    datasetend4filename = "end"
-    #datasetend4filename = ds.strtime[-1].strftime('%Y%m%d')
-    
+    datasetstart4filename = stt.strftime('%Y%m%d')
+    datasetend4filename = ent.strftime('%Y%m%d')
     outputfile = ("{}{}{}{}{}{}{}{}".format(output["destdir"],"/",stmd["filename"],
                                     "_",datasetstart4filename,"-",datasetend4filename,".nc"))
-    #print("skrabada")
     ds.to_netcdf(outputfile,
                  encoding={'depth': {'dtype':'int32'},
                            'time': {'dtype': 'int32'},
                            'soil_temperature': {'dtype': 'float32'}
                            })
-    print("skrabada")
     return
-"""
-args = parse_arguments()
-cfgstr = parse_cfg(args.cfgfile)
-mylog = initialise_logger(cfgstr["output"]["logfile"])
-extractdatajson(cfgstr["frostcfg"],)
-"""
-if __name__ == "__main__":
-    
+
+if __name__ == "__main__": 
     # Parse command line arguments
     try:
         args = parse_arguments()
