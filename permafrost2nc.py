@@ -213,14 +213,15 @@ def extractdatajson(frostcfg,station,stmd,output):
     ds.attrs["project"] = stmd["Project"]
     #print(ds)
     #to netcdf
-    datasetstart4filename = stt.strftime('%Y%m%d')
-    datasetend4filename = ent.strftime('%Y%m%d')
+    datasetstart4filename = stt.strftime("%Y%m%d")
+    datasetend4filename = ent.strftime("%Y%m%d")
     outputfile = ("{}{}{}{}{}{}{}{}".format(output["destdir"],"/",stmd["filename"],
                                     "_",datasetstart4filename,"-",datasetend4filename,".nc"))
     ds.to_netcdf(outputfile,
-                 encoding={'depth': {'dtype':'int32'},
-                           'time': {'dtype': 'int32'},
-                           'soil_temperature': {'dtype': 'float32'}
+                 encoding={"depth": {"dtype":"int32"},
+                           "profile" : {"dtype" : "int32"},
+                           "time": {"dtype": "int32"},
+                           "soil_temperature": {"dtype": "float32"}
                            })
     return
 
