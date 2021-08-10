@@ -211,6 +211,7 @@ def extractdatajson(frostcfg,station,stmd,output):
     ds.attrs["source"] = "Soil temperature from permafrost boreholes"
     ds.attrs["wigosId"] = sourcedata["data"][0]["wigosId"]
     ds.attrs["project"] = stmd["Project"]
+    ds.encoding["unlimited_dims"] = "profile"
     #print(ds)
     #to netcdf
     datasetstart4filename = stt.strftime("%Y%m%d")
