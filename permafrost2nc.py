@@ -167,8 +167,8 @@ def extractdatajson(frostcfg,station,stmd,output):
         else:
             ds = xr.concat([ds,prof], dim = "profile") #similar to append in time consumption??
         profilenr += 1
-    stt = datetime.fromtimestamp(ds.time[0]) #datetime object of first timestep
-    ent = datetime.fromtimestamp(ds.time[-1]) #datetime object of final timestep
+    stt = datetime.fromtimestamp(int(ds.time[0])) #datetime object of first timestep
+    ent = datetime.fromtimestamp(int(ds.time[-1])) #datetime object of final timestep
     #ds.attrs["name"] = "temperature" #what's the purpose of this?
     ds.attrs["name"] = "temperature"
     ds.attrs["standard_name"] = "soil_temperature"
@@ -211,7 +211,7 @@ def extractdatajson(frostcfg,station,stmd,output):
     ds.attrs["source"] = "Soil temperature from permafrost boreholes"
     ds.attrs["wigosId"] = sourcedata["data"][0]["wigosId"]
     ds.attrs["project"] = stmd["Project"]
-    ds.encoding["unlimited_dims"] = "profile"
+    #ds.encoding["unlimited_dims"] = "profile"
     #print(ds)
     #to netcdf
     datasetstart4filename = stt.strftime("%Y%m%d")
