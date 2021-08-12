@@ -119,7 +119,7 @@ def extractdatajson(frostcfg,station,stmd,output):
         return
     if r.status_code != 200:
         mylog.error("Returned status code was %s\nmessage:\n%s", r.status_code, r.text)
-        raise
+        return
     
     metadata = json.loads(r.text) #observation dict, confusing name (sorry)
     data = metadata.pop('data') #obtain data dict
